@@ -1,9 +1,9 @@
 /**
- * AetherForge Orchestrator
- * Vercel AI SDK + genome injection – core of the autonomous engine
+ * AetherForge Orchestrator – modern Vercel AI SDK pattern
+ * generateText + Output.object + genome injection
  */
 
-import { generateObject, generateText } from 'ai'
+import { generateText, Output } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { BASE_PROMPTS } from '../prompts'
 import {
@@ -16,17 +16,33 @@ import {
 import { rankOpportunities } from '../scoring'
 import type { Genome } from '../genetic'
 
-function createModel(apiKey: string, provider: RunInput['provider'] = 'openai', baseURL?: string) {
+function createModel(
+  apiKey: string,
+  provider: RunInput['provider'] = 'openai',
+  baseURL?: string
+) {
   const openai = createOpenAI({
     apiKey,
-    baseURL: baseURL || (provider === 'xai' ? 'https://api.x.ai/v1' : provider === 'huggingface' ? 'https://router.huggingface.co/v1' : undefined),
+    baseURL:
+      baseURL ||
+      (provider === 'xai'
+        ? 'https://api.x.ai/v1'
+        : provider === 'huggingface'
+          ? 'https://router.huggingface.co/v1'
+          : undefined),
   })
-  return openai(provider === 'xai' ? 'grok-2' : 'gpt-4o')
+  // Default models – can later be evolved by genetics too
+  const modelId =
+    provider === 'xai' ? 'grok-2' : provider === 'huggingface' ? 'meta-llama/Llama-3.3-70B-Instruct' : 'gpt-4o'
+  return openai(modelId)
 }
 
-function buildSystemPrompt(role: keyof typeof BASE_PROMPTS, genome?: Genome | null): string {
-  if (!genome || !genome.systemPrompt) return BASE_PROMPTS[role]
-  return genome.systemPrompt
+function buildSystemPrompt(
+  role: keyof typeof BASE_PROMPTS,
+  genome?: Genome | null
+): string {
+  if (genome?.systemPrompt) return genome.systemPrompt
+  return BASE_PROMPTS[role]
 }
 
 export async function runOpportunityPipeline(
@@ -41,30 +57,37 @@ export async function runOpportunityPipeline(
 
   const userContext = `Niche: ${input.niche}\nGoal: ${input.goal || 'High-potential solo-founder revenue opportunities'}\nConstraints: ${input.constraints || 'Digital, high-margin, fast time-to-first-euro'}`
 
-  const { object: trends } = await generateObject({
+  // TrendScout – structured
+  const { output: trends } = await generateText({
     model,
-    schema: TrendScoutOutputSchema,
     system: buildSystemPrompt('trendScout', genomes.trendScout),
-    prompt: userContext,
     temperature: genomes.trendScout?.temperature ?? 0.65,
+    output: Output.object({
+      schema: TrendScoutOutputSchema,
+    }),
+    prompt: userContext,
   })
 
-  const { object: rawOpportunities } = await generateObject({
+  // OpportunitySynthesizer – structured
+  const { output: rawOpportunities } = await generateText({
     model,
-    schema: OpportunitySynthesizerOutputSchema,
     system: buildSystemPrompt('opportunitySynthesizer', genomes.opportunitySynthesizer),
-    prompt: `${userContext}\n\nTrend intelligence:\n${JSON.stringify(trends, null, 2)}`,
     temperature: genomes.opportunitySynthesizer?.temperature ?? 0.7,
+    output: Output.object({
+      schema: OpportunitySynthesizerOutputSchema,
+    }),
+    prompt: `${userContext}\n\nTrend intelligence:\n${JSON.stringify(trends, null, 2)}`,
   })
 
   const opportunities = rankOpportunities(rawOpportunities as Opportunity[])
   const topOpportunity = opportunities[0]
 
+  // AssetForger – free text (Markdown package)
   const { text: assetsMarkdown } = await generateText({
     model,
     system: buildSystemPrompt('assetForger', genomes.assetForger),
-    prompt: `${userContext}\n\nSelected top opportunity:\n${JSON.stringify(topOpportunity, null, 2)}\n\nProduce the complete launch package now.`,
     temperature: genomes.assetForger?.temperature ?? 0.55,
+    prompt: `${userContext}\n\nSelected top opportunity:\n${JSON.stringify(topOpportunity, null, 2)}\n\nProduce the complete launch package now.`,
   })
 
   return {
