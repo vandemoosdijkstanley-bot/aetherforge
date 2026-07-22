@@ -12,15 +12,7 @@ export default function Dashboard() {
             <label className="block text-sm text-zinc-400 mb-1">Niche / Domain</label>
             <input
               type="text"
-              placeholder="e.g. AI tools for indie hackers, sustainable fashion, B2B SaaS for lawyers"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1">Goal (optional)</label>
-            <input
-              type="text"
-              placeholder="High-margin recurring revenue, 30-day launch"
+              placeholder="e.g. AI tools for indie hackers"
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-white"
             />
           </div>
@@ -28,7 +20,7 @@ export default function Dashboard() {
             <label className="block text-sm text-zinc-400 mb-1">Your LLM API Key</label>
             <input
               type="password"
-              placeholder="sk-... or equivalent"
+              placeholder="sk-..."
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-white"
             />
           </div>
