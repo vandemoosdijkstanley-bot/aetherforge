@@ -1,24 +1,25 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
+import { useState } from 'react'
 
 export default function DashboardPage() {
-  const [niche, setNiche] = useState('');
-  const [goal, setGoal] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [niche, setNiche] = useState('')
+  const [goal, setGoal] = useState('')
+  const [constraints, setConstraints] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState<any>(null)
 
   async function runPipeline() {
     if (!niche.trim() || !apiKey.trim()) {
-      setError('Niche and API key are required');
-      return;
+      setError('Niche and API key are required')
+      return
     }
 
-    setLoading(true);
-    setError('');
-    setResult(null);
+    setLoading(true)
+    setError('')
+    setResult(null)
 
     try {
       const res = await fetch('/api/agents/run', {
@@ -27,22 +28,23 @@ export default function DashboardPage() {
         body: JSON.stringify({
           niche: niche.trim(),
           goal: goal.trim() || undefined,
+          constraints: constraints.trim() || undefined,
           userApiKey: apiKey.trim(),
           provider: 'openai',
         }),
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Pipeline failed');
+      if (!res.ok) {
+        throw new Error(data.error || data.message || 'Pipeline failed')
       }
 
-      setResult(data.result);
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setResult(data.data)
+    } catch (e: any) {
+      setError(e.message || 'Something went wrong')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -51,17 +53,17 @@ export default function DashboardPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">AetherForge</h1>
         <p className="text-zinc-400 mb-8">
-          Enter a niche. The multi-agent engine will generate trends, ranked opportunities and a full launch package.
+          Enter a niche. The multi-agent engine will generate trends, ranked opportunities and a complete launch package.
         </p>
 
         <div className="space-y-4 border border-zinc-800 rounded-xl p-6 mb-8">
           <div>
-            <label className="block text-sm text-zinc-400 mb-1">Niche</label>
+            <label className="block text-sm text-zinc-400 mb-1">Niche *</label>
             <input
               type="text"
               value={niche}
               onChange={(e) => setNiche(e.target.value)}
-              placeholder="e.g. AI tools for freelancers"
+              placeholder="e.g. AI tools for freelance designers"
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-white"
             />
           </div>
@@ -72,13 +74,24 @@ export default function DashboardPage() {
               type="text"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
-              placeholder="High-ROI digital products under 30 days"
+              placeholder="High-margin digital product with fast time-to-first-euro"
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-white"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-zinc-400 mb-1">Your API Key (OpenAI / xAI)</label>
+            <label className="block text-sm text-zinc-400 mb-1">Constraints (optional)</label>
+            <input
+              type="text"
+              value={constraints}
+              onChange={(e) => setConstraints(e.target.value)}
+              placeholder="Solo founder, no team, max 30 days to launch"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">Your LLM API Key *</label>
             <input
               type="password"
               value={apiKey}
@@ -93,57 +106,59 @@ export default function DashboardPage() {
             disabled={loading || !niche.trim() || !apiKey.trim()}
             className="w-full bg-white text-black font-medium py-3 rounded-lg hover:bg-zinc-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Forging...' : 'Start Forging'}
+            {loading ? 'Forging opportunities…' : 'Start Forging'}
           </button>
-        </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-950/50 border border-red-800 rounded-lg text-red-300 text-sm">
-            {error}
-          </div>
-        )}
+          {error && (
+            <p className="text-red-400 text-sm mt-2">{error}</p>
+          )}
+        </div>
 
         {result && (
           <div className="space-y-8">
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Top Opportunity</h2>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-                <h3 className="text-lg font-medium mb-2">{result.topOpportunity?.title}</h3>
-                <p className="text-zinc-300 mb-3">{result.topOpportunity?.pitch}</p>
-                <div className="grid grid-cols-2 gap-3 text-sm text-zinc-400">
-                  <div>Score: {result.topOpportunity?.attractivenessScore}</div>
-                  <div>Days to first €: {result.topOpportunity?.daysToFirstEuro}</div>
-                  <div>Difficulty: {result.topOpportunity?.difficulty}/10</div>
-                  <div>Model: {result.topOpportunity?.revenueModel}</div>
-                </div>
+            {/* Top Opportunity */}
+            <section className="border border-zinc-800 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-4">Top Opportunity</h2>
+              <div className="space-y-2 text-sm">
+                <p><span className="text-zinc-400">Title:</span> {result.topOpportunity?.title}</p>
+                <p><span className="text-zinc-400">Pitch:</span> {result.topOpportunity?.pitch}</p>
+                <p><span className="text-zinc-400">Target:</span> {result.topOpportunity?.targetAvatar}</p>
+                <p><span className="text-zinc-400">Revenue model:</span> {result.topOpportunity?.revenueModel}</p>
+                <p><span className="text-zinc-400">Est. MRR @100:</span> €{result.topOpportunity?.estimatedMonthlyRevenueAt100}</p>
+                <p><span className="text-zinc-400">Difficulty:</span> {result.topOpportunity?.difficulty}/10</p>
+                <p><span className="text-zinc-400">Days to first euro:</span> {result.topOpportunity?.daysToFirstEuro}</p>
+                <p><span className="text-zinc-400">Why now:</span> {result.topOpportunity?.whyNow}</p>
+                <p><span className="text-zinc-400">Unique insight:</span> {result.topOpportunity?.uniqueInsight}</p>
               </div>
             </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Assets Package</h2>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-                <pre className="whitespace-pre-wrap text-sm text-zinc-300 overflow-auto max-h-[600px]">
+            {/* Trends summary */}
+            {result.trends && (
+              <section className="border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-xl font-semibold mb-4">Trend Intelligence</h2>
+                <p className="text-sm text-zinc-300 mb-3">{result.trends.summaryInsight}</p>
+                <ul className="space-y-2 text-sm">
+                  {result.trends.trends?.slice(0, 4).map((t: any, i: number) => (
+                    <li key={i} className="border-l-2 border-zinc-700 pl-3">
+                      <span className="font-medium">{t.name}</span> — {t.whyNow}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Assets */}
+            {result.assetsMarkdown && (
+              <section className="border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-xl font-semibold mb-4">Launch Package</h2>
+                <pre className="text-xs bg-zinc-900 p-4 rounded-lg overflow-auto whitespace-pre-wrap max-h-[600px]">
                   {result.assetsMarkdown}
                 </pre>
-              </div>
-            </section>
-
-            {result.trends && (
-              <section>
-                <h2 className="text-xl font-semibold mb-3">Trend Intelligence</h2>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-sm text-zinc-400">
-                  <p className="mb-2">{result.trends.summaryInsight}</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {result.trends.trends?.slice(0, 4).map((t: any, i: number) => (
-                      <li key={i}>{t.name} (momentum {t.momentumScore}/10)</li>
-                    ))}
-                  </ul>
-                </div>
               </section>
             )}
           </div>
         )}
       </div>
     </main>
-  );
+  )
 }
